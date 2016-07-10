@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mapper.RoleMapper">
+	
+	<insert id="batchSaveAuthorities" parameterType="java.util.List">
+		insert into role_authority(role_id,authority_id)
+		<foreach collection="authorities" item="item" index="index" separator="union all">
+			select 
+			#{id},
+			#{item.id}
+			from dual
+		</foreach>
+	</insert>
+	
+	<delete id="deleteAllAuthorities">
+		delete from role_authority
+		where role_id = #{id}
+	</delete>
+	
+	<select id="getAllRoles" resultType="com.atguigu.crm.entity.Role">
+		select distinct *
+		from roles
+		where name is not null
+	</select>
+	
+	<!-- 本表需要连接多对多的中间表，同时还需要authority表自联，因为里面有子父类的关系 -->
+	<select id="get" resultMap="RoleMap">
+		select r.id, r.description, r.enabled, r.name,
+		ra.role_id as "r_role_id", ra.authority_id as "r_authority_id",
+		au1.id as "au1_id", au1.display_name as "au1_display_name", au1.parent_authority_id
+		<!-- au2.id as "au2_id", au2.display_name as "au2_display_name" -->
+		from roles r
+		left outer join role_authority ra
+		on r.id = ra.role_id
+		left outer join authorities au1
+		on ra.authority_id = au1.id
+		<!-- left outer join authorities au2
+		on au1.parent_authority_id = au2.id -->
+		where r.id = #{id}
+	</select>
+	<resultMap type="com.atguigu.crm.entity.Role" id="RoleMap">
+		<id column="id" property="id"/>
+		<result column="description" property="description"/>
+		<result column="enabled" property="enabled"/>
+		<result column="name" property="name"/>
+		
+		<collection property="authorities" javaType="com.atguigu.crm.entity.Authority">
+			<id column="au1_id" property="id"/>
+			<result column="au1_display_name" property="displayName"/>
+			<result column="" property=""/>
+			<!-- <collection property="subAuthorities" javaType="com.atguigu.crm.entity.Authority">
+				<id column="au1_id" property="id"/>
+				<result column="au1_display_name" property="displayName"/>
+				<result column="parent_authority_id" property="parentAuthority.id"/>
+			</collection> -->
+		</collection>
+	</resultMap>
+
+	<delete id="delete">
+		delete from roles
+		where id = #{id}
+	</delete>
+
+	<insert id="save">
+		insert into roles(id,name,description,enabled)
+		values(crm_seq.nextval,#{name},#{description},#{enabled})
+	</insert>
+
+	<select id="getContent" resultType="com.atguigu.crm.entity.Role">
+		select *
+		from (
+		<!-- 编号，名称，地区，客户经理，客户等级，状态 -->
+		select rownum rn, id, name, description, enabled
+		from roles 
+		)
+		<![CDATA[
+		where rn >= #{fromIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getTotalElements" resultType="long">
+	select count(c.id)
+	from roles c
+	</select>
+
+</mapper>

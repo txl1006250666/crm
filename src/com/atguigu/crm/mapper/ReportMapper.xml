@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mapper.ReportMapper">
+	
+	<select id="getTotalElements" resultType="long" >
+		select count(distinct c.id)
+		from customers c
+		inner join orders o
+		on c.id = o.customer_id
+		left outer join order_items oi 
+		on o.id = oi.order_id
+		left outer join products p
+		on oi.product_id = p.id
+		
+		<where>
+			<if test="custName != null and custName != ''">
+				and c.name LIKE #{custName}
+			</if>
+			<if test="minOrderDate != null and minOrderDate != ''">
+				and o.order_date > #{minOrderDate}
+			</if>
+			<if test="maxOrderDate != null and maxOrderDate != ''">
+				<![CDATA[
+					and o.order_date < #{maxOrderDate}
+				]]>
+			</if>
+		</where>
+	</select>
+	
+	<select id="getContent" resultType="java.util.Map">
+	select rownum, a.*
+		from (
+		select c.name as "name", sum(p.price * oi.item_count) as "totalMoney"
+		from customers c
+		inner join orders o
+		on c.id = o.customer_id
+		left outer join order_items oi 
+		on o.id = oi.order_id
+		left outer join products p
+		on oi.product_id = p.id
+		<!-- WHERE c.name LIKE #{custName} AND o.order_date BETWEEN #{minOrderDate} AND #{maxOrderDate} -->
+		<where>
+			<if test="custName != null and custName != ''">
+				and c.name LIKE #{custName}
+			</if>
+			<if test="minOrderDate != null and minOrderDate != ''">
+				and o.order_date > #{minOrderDate}
+			</if>
+			<if test="maxOrderDate != null and maxOrderDate != ''">
+				<![CDATA[
+					and o.order_date < #{maxOrderDate}
+				]]>
+			</if>
+		</where>
+		group by c.name
+		<![CDATA[
+		)a where rownum >= #{fromIndex} and rownum < #{endIndex}
+		]]>
+	</select>
+</mapper>

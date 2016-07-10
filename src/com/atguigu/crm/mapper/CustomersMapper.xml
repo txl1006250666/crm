@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mapper.CustomersMapper">
+	
+	<select id="getAllForList" resultType="com.atguigu.crm.entity.Customer">
+		select c.id, c.name
+		from customers c
+	</select>
+	
+	<update id="updateStatusByDrain">
+		update customers
+		set state = '流失'
+		where id = #{id}
+	</update>
+	
+	<update id="deleteByUpdate">
+		update customers 
+		set state = '删除'
+		where id = #{id}
+	</update>
+	
+	<update id="update">
+		update customers c
+		set c.name=#{name},c.region=#{region},c.satify=#{satify},c.state=#{state},c.credit=#{credit},c.customer_level=#{level},
+		c.address=#{address},c.zip=#{zip},c.tel=#{tel},c.fax=#{fax},c.websit=#{websit},c.manager_id=#{manager.id},
+		c.licence_no=#{licenceNo},c.chief=#{chief},c.bankroll=#{bankroll},c.turnover=#{turnover},c.bank=#{bank},
+		c.bank_account=#{bankAccount},c.local_tax_no=#{localTaxNo},c.national_tax_no=#{nationalTaxNo}
+		where c.id = #{id}
+	</update>
+
+	<select id="get" resultMap="CustomerMap">
+		select c.id,c.no,c.name,c.region,c.satify,c.state,c.credit,c.customer_level as "level",
+		c.address,c.zip,c.tel,c.fax,c.websit,c.manager_id,
+		c.licence_no,c.chief,c.bankroll,c.turnover,c.bank,c.bank_account,c.local_tax_no,c.national_tax_no,
+		t.name as "t_name",t.id as "t_id",
+		o.id as "o_id",o.no as "o_no"
+		from customers c
+		left outer join contacts t
+		on c.manager_id = t.id
+		left outer join orders o
+		on c.id = o.customer_id
+		where c.id = #{id}
+	</select>
+	<resultMap type="com.atguigu.crm.entity.Customer" id="CustomerMap">
+		<id column="id" property="id"/>
+		<result column="no" property="no"/>
+		<result column="name" property="name"/>
+		<result column="region" property="region"/>
+		<result column="satify" property="satify"/>
+		<result column="state" property="state"/>
+		<result column="credit" property="credit"/>
+		<result column="level" property="level"/>
+		<result column="address" property="address"/>
+		<result column="zip" property="zip"/>
+		<result column="tel" property="tel"/>
+		<result column="fax" property="fax"/>
+		<result column="websit" property="websit"/>
+		<result column="licence_no" property="licenceNo"/>
+		<result column="chief" property="chief"/>
+		<result column="bankroll" property="bankroll"/>
+		<result column="turnover" property="turnover"/>
+		<result column="bank" property="bank"/>
+		<result column="bank_account" property="bankAccount"/>
+		<result column="local_tax_no" property="localTaxNo"/>
+		<result column="national_tax_no" property="nationalTaxNo"/>
+		<result column="manager_id" property="manager.id"/>
+		<collection property="contacts" javaType="com.atguigu.crm.entity.Contact">
+			<id column="t_id" property="id"/>
+			<result column="t_name" property="name"/>
+			<result column="id" property="customer.id"/>
+		</collection>
+		<collection property="orders" javaType="com.atguigu.crm.entity.Order">
+			<id column="o_id" property="id"/>
+			<result column="o_no" property="no"/>
+		</collection>
+	</resultMap>
+	
+	<select id="getManagers" resultType="com.atguigu.crm.entity.Contact">
+		select c.id,c.name,c.customer_id
+		from contacts c
+		where customer_id = #{id}
+	</select>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.Customer">
+		select *
+		from (
+		<!-- 编号，名称，地区，客户经理，客户等级，状态 -->
+		select rownum rn,c.id,c.no,c.name,c.region,c.credit,c.state,t.name as "manager.name"
+		from customers c
+		<!-- <if test="manager.name != null"> -->
+		left outer join contacts t
+		on c.manager_id = t.id
+		<!-- </if> -->
+		<where>
+			<if test="name != null and name != ''">
+				c.name like #{name}
+			</if>
+			<if test="region != null and region != ''">
+				and c.region = #{region}
+			</if>
+			<if test="level != null and level != ''">
+				and c.customer_level = #{level}
+			</if>
+			<if test="state != null and state != ''">
+				and c.state = #{state}
+			</if>
+			<if test="managerName != null and managerName != ''">
+				and t.name like #{managerName}
+			</if>
+		</where>
+		)
+		<![CDATA[
+		where rn >= #{fromIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getTotalElements" resultType="long">
+		select count(c.id)
+		from customers c
+		left outer join contacts t
+		on c.manager_id = t.id
+		<where>
+			<if test="name != null and name != ''">
+				c.name like #{name}
+			</if>
+			<if test="region != null and region != ''">
+				and c.region = #{region}
+			</if>
+			<if test="level != null and level != ''">
+				and c.customer_level = #{level}
+			</if>
+			<if test="state != null and state != ''">
+				and c.state = #{state}
+			</if>
+			<if test="managerName != null and managerName != ''">
+				and t.name like #{managerName}
+			</if>
+		</where>
+	</select>
+	
+	<insert id="saveCustomers">
+		<!-- //将相关信息插入客户表：id,name，随机No，state为正常 -->
+		<selectKey order="BEFORE" keyProperty="id" resultType="long">
+			select crm_seq.nextval FROM dual
+		</selectKey>
+		insert into
+		customers(id,name,no,state)
+		values(#{id},#{name},#{no},#{state})
+	</insert>
+
+</mapper>

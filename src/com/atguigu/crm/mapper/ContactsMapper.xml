@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mapper.ContactsMapper">
+	
+	<delete id="delete">
+		delete from contacts
+		where id = #{id}
+	</delete>
+	
+	<update id="update">
+		update contacts
+		set name=#{name},tel=#{tel},sex=#{sex}, position=#{position}, mobile=#{mobile}, memo=#{memo}
+		where id = #{id}
+	</update>
+	
+	<select id="get" resultType="com.atguigu.crm.entity.Contact">
+		select id, name, sex, position, tel, mobile, memo, customer_id as "customer.id"
+		from contacts
+		where id = #{id}
+	</select>
+
+	<!-- //将相关信息插入联系表：id,name,tel,customer_id -->
+	<insert id="saveContacts">
+		insert into contacts(id,name,tel,sex, position, mobile, memo,customer_id)
+		values(crm_seq.nextval,#{name,jdbcType=VARCHAR},#{tel,jdbcType=VARCHAR},#{sex},#{position},#{mobile},#{memo},#{customer.id})
+	</insert>
+	
+	<select id="getTotalElements" resultType="long">
+		select count(id)
+		from contacts
+		where customer_id =#{id}
+	</select>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.Contact">
+	select *
+		from (
+		select rownum rn,id, name, sex, position, tel, mobile, memo
+		from contacts
+		where customer_id =#{id}
+		)
+		<![CDATA[
+		where rn >= #{fromIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+</mapper>

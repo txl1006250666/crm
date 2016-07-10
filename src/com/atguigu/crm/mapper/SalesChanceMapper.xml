@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mapper.SalesChanceMapper">
+	
+	<!-- 改变status -->
+	<update id="updateFinish">
+		update sales_chances set status = #{status}
+		where id = #{id}
+	</update>
+
+	<update id="stop">
+		update sales_chances set status = 4
+		where id = #{id}
+	</update>
+
+	<update id="dipatch">
+		update sales_chances set
+		status=#{status},designee_id=#{designee.id},designee_date=#{designeeDate}
+		where id = #{id}
+	</update>
+
+	<update id="update">
+		update sales_chances set
+		id=#{id},source=#{source},cust_name=#{custName},rate=#{rate},
+		title=#{title},contact=#{contact},contact_tel=#{contactTel},description=#{description}
+		where id = #{id}
+	</update>
+
+	<select id="getById" resultMap="planMap">
+		select
+		c.id,c.source,c.cust_name,c.rate,c.title,c.contact,c.contact_tel,
+		c.description,p.todo,p.plan_date,c.create_date,p.chance_id,p.id AS "p_id",u.name as "c_name",r.name as "r_name",
+		p.plan_result
+		from sales_chances c
+		left outer join sales_plan p
+		on c.id = p.chance_id
+		left outer join users u
+		on c.created_user_id = u.id
+		left outer join users r
+		on c.designee_id = r.id
+		where c.id = #{id}
+	</select>
+	<resultMap type="com.atguigu.crm.entity.SalesChance" id="planMap">
+		<id column="id" property="id" />
+		<result column="source" property="source" />
+		<result column="cust_name" property="custName" />
+		<result column="rate" property="rate" />
+		<result column="title" property="title" />
+		<result column="contact" property="contact" />
+		<result column="contact_tel" property="contactTel" />
+		<result column="create_date" property="createDate" />
+		<result column="description" property="description"/>
+		<result column="c_name" property="createBy.name"/>
+		<result column="r_name" property="designee.name"/>
+		
+		<collection property="salesPlans" javaType="com.atguigu.crm.entity.SalesPlan">
+			<id column="p_id" property="id"/>
+			<result column="todo" property="todo"/>
+			<result column="plan_date" property="date"/>
+			<result column="plan_result" property="result"/>
+		</collection>
+	</resultMap>
+
+	<delete id="delete">
+		delete from sales_chances
+		where id = #{id}
+	</delete>
+
+	<insert id="save">
+		insert into
+		sales_chances(id,source,cust_name,rate,title,contact,contact_tel,description,created_user_id,create_date,status)
+		values(crm_seq.nextval,#{source},#{custName,jdbcType=VARCHAR},#{rate},#{title},#{contact},#{contactTel},#{description},#{createBy.id},#{createDate},#{status})
+		<!-- INSERT INTO sales_chances(id, source, title, cust_name, contact, contact_tel, 
+			rate, description, created_user_id, create_date, status) VALUES(crm_seq.nextval, 
+			#{source}, #{title}, #{custName}, #{contact}, #{contactTel}, #{rate}, #{description}, 
+			#{createBy.id}, #{createDate}, #{status}) -->
+	</insert>
+
+	<select id="getTotalElements" resultType="long">
+		select count(id)
+		from sales_chances
+		<!-- where status = #{status} and created_user_id = #{createBy.id} -->
+		<where>
+			<!-- status = #{status} and created_user_id = #{createBy.id} -->
+			<if test="designee != null">
+					<![CDATA[
+					status > #{status} and designee_id = #{designee.id}
+					]]>
+			</if>
+			<if test="designee == null">
+				status = #{status} and created_user_id = #{createBy.id}
+			</if>
+			<if test="custName != null">
+				<!-- and cust_name like concat(concat('%',#{custName}),'%') -->
+				and cust_name like #{custName}
+			</if>
+			<if test="title != null">
+				<!-- and title like concat(concat('%',#{title}),'%') -->
+				and title like #{title}
+			</if>
+			<if test="contact != null">
+				<!-- and contact like concat(concat('%',#{contact}),'%') -->
+				and contact like #{contact}
+			</if>
+		</where>
+
+	</select>
+
+	<select id="getContent" resultType="com.atguigu.crm.entity.SalesChance">
+		select *
+		from (
+		select rownum rn,id,cust_name,title,contact,contact_tel,create_date,status
+		from sales_chances
+		<!-- where status = #{status} and created_user_id = #{createBy.id} -->
+		<where>
+			<!-- status = #{status} and created_user_id = #{createBy.id} -->
+			<if test="designee != null">
+					<![CDATA[
+					status > #{status} and designee_id = #{designee.id}
+					]]>
+			</if>
+			<if test="designee == null">
+				status = #{status} and created_user_id = #{createBy.id}
+			</if>
+			<if test="custName != null">
+				<!-- and cust_name like concat(concat('%',#{custName}),'%') -->
+				and cust_name like #{custName}
+			</if>
+			<if test="title != null">
+				<!-- and title like concat(concat('%',#{title}),'%') -->
+				and title like #{title}
+			</if>
+			<if test="contact != null">
+				<!-- and contact like concat(concat('%',#{contact}),'%') -->
+				and contact like #{contact}
+			</if>
+		</where>
+		)
+		<![CDATA[
+		where rn >= #{fromIndex} and rn < #{endIndex}
+		]]>
+	</select>
+
+</mapper>
+			<!-- <if test="custName != null">
+				and cust_name like concat(concat('%',#{custName}),'%')
+			</if>
+			<if test="title != null">
+				and title like concat(concat('%',#{title}),'%')
+			</if>
+			<if test="contact != null">
+				and contact like concat(concat('%',#{contact}),'%')
+			</if> -->

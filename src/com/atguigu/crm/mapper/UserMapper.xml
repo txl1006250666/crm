@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mapper.UserMapper">
+	
+	<insert id="save">
+		insert into users(id,name,password,role_id,enabled)
+		values(crm_seq.nextval,#{name},#{password},#{role.id},#{enabled})
+	</insert>
+	
+	<update id="update">
+		update users set name=#{name},password=#{password},role_id=#{role.id},enabled=#{enabled}
+		where id = #{id}
+	</update>
+	
+	<delete id="delete">
+		delete from users
+		where id = #{id}
+	</delete>
+	
+	<select id="get" resultType="com.atguigu.crm.entity.User">
+	select id,name, password
+	from users
+	where id = #{id}
+	</select>
+	
+	<select id="getAllUsers" resultType="com.atguigu.crm.entity.User">
+		select id,name
+		from users
+		where name is not null
+	</select>
+	
+	<select id="getByName" resultType="com.atguigu.crm.entity.User">
+		select u.id, u.name, u.enabled, password, r.name as "role.name"
+		from users u
+		left outer join roles r
+		on u.role_id = r.id
+		where u.name = #{name}
+	</select>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.User">
+		select *
+		from (
+		<!-- 编号，名称，地区，客户经理，客户等级，状态 -->
+		select rownum rn, u.id, u.name, r.description as "role.description", u.enabled, r.name as "role.name"
+		from users u
+		left join roles r
+		on u.role_id = r.id
+		<where>
+		<if test="name != null and name != ''">
+			u.name like #{name}
+		</if>
+		<if test="enabled != null and enabled != ''">
+			and u.enabled = #{enabled}
+		</if>
+		</where>
+		)
+		<![CDATA[
+		where rn >= #{fromIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getTotalElements" resultType="long">
+	select count(c.id)
+	from users c
+	<where>
+		<if test="name != null and name != ''">
+			c.name like #{name}
+		</if>
+		<if test="enabled != null and enabled != ''">
+			and c.enabled = #{enabled}
+		</if>
+	</where>
+	</select>
+
+</mapper>

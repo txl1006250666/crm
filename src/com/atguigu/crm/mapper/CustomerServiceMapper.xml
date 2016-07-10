@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mapper.CustomerServiceMapper">
+	
+	<select id="get" resultType="com.atguigu.crm.entity.CustomerService">
+		select cs.id, cs.service_type, cs.service_title, cs.service_state, cs.service_request,
+		created_id as "createdby.id", cs.create_date, cs.customer_id,
+		cs.allot_id as "allotTo.id", cs.allot_date,
+		c.name as "customer.name",
+		u.name as "createdby.name"
+		from customer_services cs
+		left outer join customers c
+		on cs.customer_id = c.id
+		left outer join users u
+		on cs.created_id = u.id
+		where cs.id = #{id}
+	</select>
+	
+	<delete id="delete">
+		delete from customer_services
+		where id = #{id}
+	</delete>
+	
+	<update id="allot">
+		update customer_services
+		set allot_date = #{allotDate}, allot_id=#{allotTo.id}, service_state=#{serviceState}
+		where id = #{id}
+	</update>
+	
+	<insert id="save">
+		insert into customer_services(id, service_type, service_title, customer_id, service_state, service_request, created_id, create_date)
+		values(crm_seq.nextval, #{serviceType}, #{serviceTitle}, #{customer.id}, #{serviceState}, #{serviceRequest}, #{createdby.id}, #{createDate})
+	</insert>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.CustomerService">
+		select *
+		from (
+		select rownum rn,cs.id, service_type, service_title, service_state, service_request, created_id, create_date, cs.customer_id,
+		c.name as "customer.name",
+		u.name as "createdBy.name"
+		from customer_services cs
+		left outer join customers c
+		on cs.customer_id = c.id
+		left outer join users u
+		on cs.created_id = u.id
+		<where>
+		cs.service_state = #{state}
+		<if test="serviceType != null and serviceType != ''">
+			and cs.service_type like #{serviceType}
+		</if>
+		<if test="serviceTitle != null and serviceTitle != ''">
+			and cs.service_title like #{serviceTitle}
+		</if>
+		<if test="customerName != null and customerName != ''">
+			and c.name like #{customerName}
+		</if>
+		<if test="minOrderDate != null and minOrderDate != ''">
+			and cs.create_date > #{minOrderDate}
+		</if>
+		<if test="maxOrderDate != null and maxOrderDate != ''">
+			<![CDATA[
+				and cs.create_date < #{maxOrderDate}
+			]]>
+		</if>
+		</where>
+		)
+		<![CDATA[
+		where rn >= #{fromIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getTotalElements" resultType="long">
+		select count(c.id)
+		from customer_services cs
+		left outer join customers c
+		on cs.customer_id = c.id
+		<where>
+		cs.service_state = #{state}
+		<if test="serviceType != null and serviceType != ''">
+			and cs.service_type like #{serviceType}
+		</if>
+		<if test="serviceTitle != null and serviceTitle != ''">
+			and cs.service_title like #{serviceTitle}
+		</if>
+		<if test="customerName != null and customerName != ''">
+			and c.name like #{customerName}
+		</if>
+		<if test="minOrderDate != null and minOrderDate != ''">
+			and cs.create_date > #{minOrderDate}
+		</if>
+		<if test="maxOrderDate != null and maxOrderDate != ''">
+			<![CDATA[
+				and cs.create_date < #{maxOrderDate}
+			]]>
+		</if>
+		</where>
+	</select>
+</mapper>

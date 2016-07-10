@@ -1,0 +1,10 @@
+/com
+/ehcache.xml
+/i18n.properties
+/jdbc.properties
+/log4j.xml
+/mybatis-config.xml
+/spring-context-quartz.xml
+/spring-context-shiro.xml
+/spring-context.xml
+/spring-mvc.xml

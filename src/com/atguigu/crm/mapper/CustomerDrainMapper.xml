@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mapper.CustomerDrainMapper">
+
+	<update id="update">
+		update customer_drains set delay=#{delay},reason=#{reason},status=#{status},drain_date=#{drainDate}
+		where id = #{id}
+	</update>
+	
+	<select id="get" resultType="com.atguigu.crm.entity.CustomerDrain">
+		select d.id,d.last_order_date as "lastOrderDate",d.delay, d.status,
+		c.name as "customer.name",c.id as "customer.id",
+		t.name as "customer.manager.name"
+		from customer_drains d
+		left outer join customers c
+		on d.customer_id = c.id
+		left outer join contacts t
+		on c.manager_id = t.id
+		where d.id = #{id}
+	</select>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.CustomerDrain">
+		select *
+		from (
+		select rownum rn,d.id,d.last_order_date as "lastOrderDate",d.drain_date as "drainDate", d.reason, d.status,
+		c.name as "customer.name",
+		t.name as "customer.manager.name"
+		from customer_drains d
+		left outer join customers c
+		on d.customer_id = c.id
+		left outer join contacts t
+		on c.manager_id = t.id
+		<where>
+			d.status in (#{status},'流失') 
+			<if test="customerName != null and customerName != ''">
+				and c.name like #{customerName}
+			</if>
+			<if test="customerManagerName != null and customerManagerName != ''">
+				and t.name like #{customerManagerName}
+			</if>
+		</where>
+		)
+		<![CDATA[
+		where rn >= #{fromIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getTotalElements" resultType="long">
+		select count(c.id)
+		from customer_drains d
+		left outer join customers c
+		on d.customer_id = c.id
+		left outer join contacts t
+		on c.manager_id = t.id
+		<where>
+			d.status in (#{status},'流失') 
+			<if test="customerName != null and customerName != ''">
+				and c.name like #{customerName}
+			</if>
+			<if test="customerManagerName != null and customerManagerName != ''">
+				and t.name like #{customerManagerName}
+			</if>
+		</where>
+	</select>
+	
+</mapper>
